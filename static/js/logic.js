@@ -105,27 +105,78 @@ d3.json("https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_week.geoj
         // Function to add style for data point
         function dataStyle(feature){
             return {
-                opacity: 1, 
-                fillOpacity: 1,
+                opacity: 0.5, 
+                fillOpacity: 0.5,
                 fillColor: dataColor(feature.geometry.coordinates[2]),
                 color: "000000",
                 radius: radiusSize(feature.properties.mag),
-                weight: 0.5
+                weight: 0.5,
+                stroke: true
             }
         }
 
         // Add GeoJson Data to earthquake layer
         L.geoJson(earthquakeData, {
-                
+            // Makes each feature a marker on the map as a circle
+            pointToLayer: function(feature, latLng){
+                return L.circleMarker(latLng);
+            },
+            style: dataStyle,
+            onEachFeature: function(feature, layer){
+                layer.bindPopup(`Magnitude: <b>${feature.properties.mag}</b><br>
+                                Depth: <b>${feature.geometry.coordinates[2]}</b><br>
+                                Location: <b>${feature.properties.place}</b>`);
+            }
         }).addTo(earthquakes);
     });
 
 // Add overlay for tectonic plates and earthquakes
 let overlays = {
-    "Tectonic Plates": tectonicPlates
+    "Tectonic Plates": tectonicPlates,
+    "Earthquake Data": earthquakes
 };
 
 // Add layer control
 L.control
     .layers(basemaps, overlays)
     .addTo(myMap);
+
+// Add legend to map
+let legend = L.control({
+    position: "bottomright"
+});
+
+// Add legend properties
+legend.onAdd = function(){
+    // To make legend appear on page
+    let div = L.DomUtil.create("div", "info legend");
+
+    // Interval setup
+    let intervals = [-10, 10, 30, 50, 70, 90];
+
+    // Set colors for intervals
+    let colors = [
+        "green",
+        "#cafc03",
+        "#fcad03",
+        "#fc8403",
+        "#fc4903",
+        "red"
+    ];
+
+    // Loop through intervals and colors to generate a label
+    // with colored square for each interval
+    for(var i = 0; i < intervals.length; i++){
+        div.innerHTML += "<i style='background: "
+            + colors[i]
+            + "'></i> "
+            + intervals[i]
+            + (intervals[i + 1] ? "km - " + intervals[i + 1] + "km<br>" : "+");
+    }
+
+    return div;
+
+};
+
+// Add legend to map
+legend.addTo(myMap);
